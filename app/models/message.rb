@@ -47,8 +47,8 @@ class Message < ApplicationRecord
   def self.send_twilio_sms
 
     #initialize twilio client
-    account_sid = ENV["TWILIO_ACCOUNT_ID"]
-    auth_token = ENV["TWILIO_AUTH_TOKEN"]
+    account_sid = User.first.preferences[:twilio_account_id]
+    auth_token = User.first.preferences[:twilio_auth_token]
     @client = Twilio::REST::Client.new(account_sid, auth_token)
 
     #iterate over messages
@@ -65,7 +65,7 @@ class Message < ApplicationRecord
       message_body += m.message_text
 
       # send message
-      message = @client.messages.create( body: message_body, from: ENV["TWILIO_NUMBER"], to: ENV["TARGET_SMS_NUMBER"] )
+      message = @client.messages.create( body: message_body, from: User.first.preferences[:twilio_number], to: User.first.preferences[:phone_number] )
       m.update(needs_sms_forwarding: false, twilio_message_id: message.sid)
     end
   end
