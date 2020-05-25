@@ -1,0 +1,78 @@
+<div style="padding-top:30px" class="container">
+  <%= form_with url: update_preferences_path do %>
+    <ul class="list-group">
+      <li class="list-group-item list-group-item-secondary">
+        <div class="row">
+          <div class="col">
+            <div class="custom-control custom-switch">
+              <% if @user.preferences[:sms_forwarding_enabled] %>
+                <input type="checkbox" class="custom-control-input" id="sms_forwarding_enabled" checked="checked">
+              <% else %>
+                <input type="checkbox" class="custom-control-input" id="sms_forwarding_enabled">
+              <% end %>
+              <label class="custom-control-label" for="sms_forwarding_enabled">Enable SMS Forwarding</label>
+            </div>
+          </div>
+        </div>
+      </li>
+      <li class="list-group-item">
+        <div class="row">
+          <div class="col">
+            <div style="padding-top:10px" class="form-group">
+              <label for="phone_number">SMS Forwarding Phone Number</label>
+              <input class="form-control" id="phone_number" type="text" value="<%= @user.preferences[:phone_number] %>">
+            </div>
+          </div>
+          <div class="col">
+            <div style="padding-top:10px" class="form-group">
+              <label for="phone_number">Twilio Phone Number</label>
+              <input class="form-control" id="twilio_number" type="text" value="<%= @user.preferences[:twilio_number] %>">
+            </div>
+          </div>
+        </div>
+      </li>
+      <li class="list-group-item">
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label for="phone_number">Twilio Account SID</label>
+              <input class="form-control" id="twilio_account_id" type="text" value="<%= @user.preferences[:twilio_account_id] %>">
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <label for="phone_number">Twilio Auto Token</label>
+              <input class="form-control" id="twilio_auth_token" type="text" value="<%= @user.preferences[:twilio_auth_token] %>">
+            </div>
+          </div>
+        </div>
+      </li>
+      <li class="list-group-item">
+        <div class="row">
+          <div class="col">
+            <%= submit_tag "Update", class: "btn btn-primary", id:"user-preferences-update" %>
+          </div>
+        </div>
+      </li>
+    </ul>
+  <% end %>
+</div>
+
+<script>
+  $("#user-preferences-update").click(function(e){
+    e.preventDefault();
+    sms_forwarding_enabled = $("#sms_forwarding_enabled").is(':checked');
+    phone_number = $("#phone_number").val();
+    twilio_number = $("#twilio_number").val();
+    twilio_account_id = $("#twilio_account_id").val();
+    twilio_auth_token = $("#twilio_auth_token").val()
+    $.post(
+      "<%= update_preferences_path %>",
+      { sms_forwarding_enabled: sms_forwarding_enabled,
+        phone_number: phone_number,
+        twilio_number: twilio_number,
+        twilio_account_id: twilio_account_id,
+        twilio_auth_token: twilio_auth_token }
+    );
+  });
+</script>
