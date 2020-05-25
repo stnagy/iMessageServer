@@ -11,7 +11,9 @@ class Message < ApplicationRecord
     Contact.find(self.contact_messages.where(is_sender: false).pluck(:contact_id))
   end
 
-  def self.import_messages(needs_sms_forwarding = false, n=10)
+  def self.import_messages(n=20)
+    needs_sms_forwarding = User.first.preferences[:sms_forwarding_enabled].to_s.downcase == "true"
+
     message_tools = MessageTools.new
     messages = message_tools.get_messages(n)
 

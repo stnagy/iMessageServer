@@ -15,10 +15,3 @@ require("channels")
 //
 // const images = require.context('../images', true)
 // const imagePath = (name) => images(name, true)
-
-$.ajaxPrefilter(function(options, originalOptions, xhr) {
-  if (!options.crossDomain) {
-    token = $('meta[name="csrf-token"]').attr('content');
-    if (token) xhr.setRequestHeader('X-CSRF-Token', token);
-  }
-});

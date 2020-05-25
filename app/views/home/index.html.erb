@@ -56,11 +56,17 @@
       </li>
     </ul>
   <% end %>
+  <div class="row" style="padding-top:10px">
+    <div class="col">
+      <div id="preference-save-status"></div>
+    </div>
+  </div>
 </div>
 
 <script>
   $("#user-preferences-update").click(function(e){
     e.preventDefault();
+    $("#user-preferences-update").prop('disabled', true);
     sms_forwarding_enabled = $("#sms_forwarding_enabled").is(':checked');
     phone_number = $("#phone_number").val();
     twilio_number = $("#twilio_number").val();
@@ -68,11 +74,31 @@
     twilio_auth_token = $("#twilio_auth_token").val()
     $.post(
       "<%= update_preferences_path %>",
-      { sms_forwarding_enabled: sms_forwarding_enabled,
-        phone_number: phone_number,
-        twilio_number: twilio_number,
-        twilio_account_id: twilio_account_id,
-        twilio_auth_token: twilio_auth_token }
-    );
+      { user: {
+        preferences:
+          { sms_forwarding_enabled: sms_forwarding_enabled,
+          phone_number: phone_number,
+          twilio_number: twilio_number,
+          twilio_account_id: twilio_account_id,
+          twilio_auth_token: twilio_auth_token }
+        }
+      }
+    ).done(function(data){
+
+      $("#sms_forwarding_enabled").prop('checked', data["ms_forwarding_enabled"]);
+      $("#phone_number").val(data["phone_number"]);
+      $("#twilio_number").val(data["twilio_number"]);
+      $("#twilio_account_id").val(data["twilio_account_id"]);
+      $("#twilio_auth_token").val(data["twilio_auth_token"])
+
+      $("#preference-save-status").append("<div class='alert alert-success' role='alert'>  Preferences successfully updated </div>").delay(5000).fadeOut("slow", function(){
+        $("#preference-save-status").empty();
+        $("#preference-save-status").fadeIn();
+      });
+
+      setTimeout(function(){$(
+        "#user-preferences-update").prop('disabled', false)
+      }, 500);
+    })
   });
 </script>
