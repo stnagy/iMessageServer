@@ -3,7 +3,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby '2.6.3'
 
-gem 'whenever'
+gem 'whenever', require: false
 gem 'twilio-ruby'
 gem 'devise'
 

@@ -5,7 +5,7 @@
         <div class="row">
           <div class="col">
             <div class="custom-control custom-switch">
-              <% if @user.preferences[:sms_forwarding_enabled] %>
+              <% if @user.preferences[:sms_forwarding_enabled].downcase == "true" %>
                 <input type="checkbox" class="custom-control-input" id="sms_forwarding_enabled" checked="checked">
               <% else %>
                 <input type="checkbox" class="custom-control-input" id="sms_forwarding_enabled">

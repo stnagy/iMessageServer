@@ -12,14 +12,22 @@ class Message < ApplicationRecord
   end
 
   def self.import_messages(n=20)
-    needs_sms_forwarding = User.first.preferences[:sms_forwarding_enabled].to_s.downcase == "true"
-
     message_tools = MessageTools.new
     messages = message_tools.get_messages(n)
 
     # update message fields
     messages.each do |m|
-      message = Message.where(rowid: m["ROWID"]).first_or_create
+      message = Message.where(rowid: m["ROWID"]).first_or_initialize
+
+      # only forward new messages
+      # only forward messages if user wants to get them
+      if message.new_record?
+        needs_sms_forwarding = User.first.preferences[:sms_forwarding_enabled].to_s.downcase == "true"
+      else
+        needs_sms_forwarding = false
+      end
+      message.save
+
       message.update(
         message_text: m["text"],
         has_attachment: m["has_attachment"],

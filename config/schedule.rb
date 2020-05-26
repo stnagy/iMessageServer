@@ -19,6 +19,10 @@
 
 # Learn more: http://github.com/javan/whenever
 
-every 5.minutes do
-  runner "Message.import_messages"
+every 1.minutes do
+  rake "messages:import"
+end
+
+every 1.minutes do
+  rake "messages:send_sms"
 end
