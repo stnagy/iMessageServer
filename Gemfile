@@ -6,6 +6,7 @@ ruby '2.6.3'
 gem 'whenever', require: false
 gem 'twilio-ruby'
 gem 'devise'
+gem 'aws-sdk', '~> 3'
 
 #---------------------#
 # STANDARD GEMS BELOW

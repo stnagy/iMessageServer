@@ -19,6 +19,12 @@
         <div class="row">
           <div class="col">
             <div style="padding-top:10px" class="form-group">
+              <label for="iphone_number">iPhone Number (if any)</label>
+              <input class="form-control" id="iphone_number" type="text" value="<%= @user.preferences[:iphone_number] %>">
+            </div>
+          </div>
+          <div class="col">
+            <div style="padding-top:10px" class="form-group">
               <label for="phone_number">SMS Forwarding Phone Number</label>
               <input class="form-control" id="phone_number" type="text" value="<%= @user.preferences[:phone_number] %>">
             </div>
@@ -68,6 +74,7 @@
     e.preventDefault();
     $("#user-preferences-update").prop('disabled', true);
     sms_forwarding_enabled = $("#sms_forwarding_enabled").is(':checked');
+    iphone_number = $("#iphone_number").val();
     phone_number = $("#phone_number").val();
     twilio_number = $("#twilio_number").val();
     twilio_account_id = $("#twilio_account_id").val();
@@ -77,15 +84,17 @@
       { user: {
         preferences:
           { sms_forwarding_enabled: sms_forwarding_enabled,
-          phone_number: phone_number,
-          twilio_number: twilio_number,
-          twilio_account_id: twilio_account_id,
-          twilio_auth_token: twilio_auth_token }
-        }
+            iphone_number: iphone_number,
+            phone_number: phone_number,
+            twilio_number: twilio_number,
+            twilio_account_id: twilio_account_id,
+            twilio_auth_token: twilio_auth_token }
+          }
       }
     ).done(function(data){
 
       $("#sms_forwarding_enabled").prop('checked', data["ms_forwarding_enabled"]);
+      $("#iphone_number").val(data["iphone_number"]);
       $("#phone_number").val(data["phone_number"]);
       $("#twilio_number").val(data["twilio_number"]);
       $("#twilio_account_id").val(data["twilio_account_id"]);

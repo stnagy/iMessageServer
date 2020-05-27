@@ -10,6 +10,19 @@ class User < ApplicationRecord
 
   def format_phone_numbers
 
+    unformatted_iphone_number = self.preferences[:iphone_number]
+    raw_iphone_number = unformatted_iphone_number.scan(/\d/).join("")
+
+    if raw_iphone_number.length == 10
+      formatted_iphone_number = "+1" + raw_iphone_number
+    elsif raw_iphone_number.length == 11
+      formatted_iphone_number = "+" + raw_iphone_number
+    else
+      formatted_iphone_number = raw_iphone_number
+    end
+
+    self.preferences[:iphone_number] = formatted_iphone_number
+
     unformatted_phone_number = self.preferences[:phone_number]
     raw_phone_number = unformatted_phone_number.scan(/\d/).join("")
 

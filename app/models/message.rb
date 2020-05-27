@@ -28,20 +28,19 @@ class Message < ApplicationRecord
       end
       message.save
 
-      message.update(
-        message_text: m["text"],
-        has_attachment: m["has_attachment"],
-        attachment_filetype: m["attachment_filetype"],
-        needs_sms_forwarding: needs_sms_forwarding,
-        twilio_message_id: nil,
-      )
-
       # update sender
       sender_name = m["sender_name"]
       sender_contact = m["sender_contact"]
       sender = Contact.where(contact_number: sender_contact).first_or_create
       sender.update(contact_name: sender_name)
       ContactMessage.where(contact_id: sender.id, message_id: message.id, is_sender: true).first_or_create
+
+      # do not forward iMessages where user responds from own iphone or OSX account
+      if sender_contact == User.first.preferences[:iphone_number]
+        needs_sms_forwarding = false
+      elsif sender_name == `id -un`.gsub("\n","") # this gets the OSX username
+        needs_sms_forwarding = false if
+      end
 
       # update other_recipients
       m["other_recipients"].each do |r|
@@ -51,6 +50,15 @@ class Message < ApplicationRecord
         recipient.update(contact_name: recipient_name)
         ContactMessage.where(contact_id: recipient.id, message_id: message.id, is_sender: false).first_or_create
       end
+
+      message.update(
+        message_text: m["text"],
+        has_attachment: m["has_attachment"],
+        attachment_filetype: m["attachment_filetype"],
+        needs_sms_forwarding: needs_sms_forwarding,
+        twilio_message_id: nil,
+      )
+
     end
   end
 
