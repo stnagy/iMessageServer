@@ -39,7 +39,7 @@ class Message < ApplicationRecord
       if sender_contact == User.first.preferences[:iphone_number]
         needs_sms_forwarding = false
       elsif sender_name == `id -un`.gsub("\n","") # this gets the OSX username
-        needs_sms_forwarding = false if
+        needs_sms_forwarding = false
       end
 
       # update other_recipients
