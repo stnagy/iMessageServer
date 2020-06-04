@@ -52,18 +52,24 @@ class Message < ApplicationRecord
       to_state = m_hash["ToState"]
       to_zip = m_hash["ToZip"]
 
-      if message_body.downcase == "forward"
-        updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "true"} )
-        User.first.update(preferences: updated_user_prefs)
-        Message.send_quick_twilio_sms("iMessage forwarding started.")
-      elsif message_body.downcase == "unforward"
-        updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "false"} )
-        User.first.update(preferences: updated_user_prefs)
-        Message.send_quick_twilio_sms("iMessage forwarding stopped.")
-      else
-        Message.send_quick_twilio_sms("Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.")
+      # only forwarded number can change settings remotely
+      if from_num == user_prefs[:phone_number]
+
+        # supported commands are "forward" and "unforward" (for now)
+        if message_body.downcase == "forward"
+          updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "true"} )
+          User.first.update(preferences: updated_user_prefs)
+          Message.send_quick_twilio_sms("iMessage forwarding started.")
+        elsif message_body.downcase == "unforward"
+          updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "false"} )
+          User.first.update(preferences: updated_user_prefs)
+          Message.send_quick_twilio_sms("iMessage forwarding stopped.")
+        else
+          Message.send_quick_twilio_sms("Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.")
+        end
       end
 
+      # delete message when done
       resp = sqs.delete_message({
         queue_url: user_prefs[:sqs_url], #
         receipt_handle: receipt_handle,
