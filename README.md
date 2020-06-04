@@ -36,7 +36,6 @@ You will need a [Twilio SMS account](https://www.twilio.com/sms) (free trial ava
 
   `/* global exports, require, console, process, Twilio */
   'use strict'
-
   // Some Node.js modules are preinstalled in the system environment.
   // As of this writing, the third party modules are not configureable, but
   // they should be soon. For now, though, you can take advantage of
@@ -47,14 +46,11 @@ You will need a [Twilio SMS account](https://www.twilio.com/sms) (free trial ava
     accessKeyId: process.env.AWS_KEY,
     secretAccessKey: process.env.AWS_SECRET
   })
-
   // Get a handle to SQS in the AWS region you created it in
   let sqs = new AWS.SQS({ region: 'us-east-1' })
-
   // Define SQS queue URLs from your AWS account
   const INCOMING_SMS_URL = 'https://sqs.us-east-1.amazonaws.com/304033346064/TwilioIncomingSMS.fifo'
   const STATUS_CALLBACK_URL = '	https://sqs.us-east-1.amazonaws.com/304033346064/StatusCallbacks'
-
   // Implement handler function for incoming messages and status callbacks
   exports.handler = function(context, event, callback) {
     // SQS send params - assume it's a status callback to a standard queue
@@ -62,7 +58,6 @@ You will need a [Twilio SMS account](https://www.twilio.com/sms) (free trial ava
       MessageBody: JSON.stringify(event),
       QueueUrl: STATUS_CALLBACK_URL
     }
-
     // If the MessageStatus parameter is not passed, this is an incoming SMS
     // message - add appropriate SQS parameters and change the URL
     if (!event.MessageStatus) {
@@ -72,13 +67,11 @@ You will need a [Twilio SMS account](https://www.twilio.com/sms) (free trial ava
       // phone number
       sendParameters.MessageGroupId = event.From.replace(/\D/g,'')
     }
-
     // Add the message to the appropriate SQS queue
     sqs.sendMessage(sendParameters, (err, res) => {
       // For now, we'll just log any errors SQS throws us
       console.log(err)
       console.log(res)
-
       // Send a TwiML response with no reply message - we'll handle
       // any responses from our workers
       let twiml = new Twilio.twiml.MessagingResponse()
