@@ -15,10 +15,10 @@ On OS X, you may also need to enable full disk access for "Terminal" app and "cr
 
 ## AWS Account -- Required
 1. Must create SQS user(s) assigned to programmatically access SQS (potentially one user for twilio and another for your local server).
-  * Use IAM tool
-  * Add user
-  * Attach "AmazonSQSFullAccess" permission
-  * Make note of user access key and secret (will need both when setting up Twilio below and during installation rake task)
+    * Use IAM tool
+    * Add user
+    * Attach "AmazonSQSFullAccess" permission
+    * Make note of user access key and secret (will need both when setting up Twilio below and during installation rake task)
 2. Create SQS Queue (FIFO - first in first out preferred)
   * Make not of AWS region (e.g. us-east-1) and SQS Queue URL (will need during installation rake task)
 
