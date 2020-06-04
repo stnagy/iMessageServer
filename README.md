@@ -20,19 +20,19 @@ On OS X, you may also need to enable full disk access for "Terminal" app and "cr
     * Attach "AmazonSQSFullAccess" permission
     * Make note of user access key and secret (will need both when setting up Twilio below and during installation rake task)
 2. Create SQS Queue (FIFO - first in first out preferred)
-  * Make not of AWS region (e.g. us-east-1) and SQS Queue URL (will need during installation rake task)
+    * Make not of AWS region (e.g. us-east-1) and SQS Queue URL (will need during installation rake task)
 
 ## Twilio Account -- Required
 You will need a [Twilio SMS account](https://www.twilio.com/sms) (free trial available as of May 2020) to send SMS messages.
 1. Once you sign up for Twilio, you will need to use this application's [web interface](http://localhost:3000/) to make note of the following, which will need to be provided during the installation rake task:
-  * Twilio phone Number
-  * Twilio Account SID
-  * Twilio Auth Token
+    * Twilio phone Number
+    * Twilio Account SID
+    * Twilio Auth Token
 2. You must implement a custom script on Twilio to forward any responses Twilio receives via SMS to AWS SQS service. This is critical for being able to remotely start and stop iMessage forwarding while you are away from your local computer. To do so, navigate to https://www.twilio.com/console/functions/manage and create a new function.
-  * Give your function a name (e.g. "Amazon SQS Enqueue")
-  * Give your function a path (e.g. "/sqs")
-  * Insert "AWS_KEY" and "AWK_SECRET" environment variables (use the values you recorded from the prior step above)
-  * Insert the following code for the function and hit the "Save" button:
+    * Give your function a name (e.g. "Amazon SQS Enqueue")
+    * Give your function a path (e.g. "/sqs")
+    * Insert "AWS_KEY" and "AWK_SECRET" environment variables (use the values you recorded from the prior step above)
+    * Insert the following code for the function and hit the "Save" button:
 
 ```
   /* global exports, require, console, process, Twilio */
