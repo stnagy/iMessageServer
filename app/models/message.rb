@@ -144,7 +144,7 @@ class Message < ApplicationRecord
     @client = Twilio::REST::Client.new(account_sid, auth_token)
 
     #iterate over messages
-    twilio_messages = Message.where(needs_sms_forwarding: true)
+    twilio_messages = Message.where(needs_sms_forwarding: true).order(rowid: :asc)
     twilio_messages.each do |m|
 
       # compose message body
