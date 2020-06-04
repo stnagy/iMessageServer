@@ -7,7 +7,8 @@ class ApplicationController < ActionController::Base
 
   def update_preferences
     @user = User.first
-    @user.update(preferences: params[:user][:preferences].to_unsafe_h.deep_symbolize_keys)
+    user_prefs = user_prefs.merge(params[:user][:preferences].to_unsafe_h.deep_symbolize_keys)
+    @user.update(preferences: user_prefs)
     @user.reload
     render json: @user.preferences
   end

@@ -26,3 +26,7 @@ end
 every 1.minutes do
   rake "messages:send_sms"
 end
+
+every 1.minutes do
+  rake "messages:check_sqs"
+end

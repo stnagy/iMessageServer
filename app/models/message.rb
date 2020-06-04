@@ -11,6 +11,67 @@ class Message < ApplicationRecord
     Contact.find(self.contact_messages.where(is_sender: false).pluck(:contact_id))
   end
 
+  def self.check_twilio_sqs_queue
+
+    user_prefs = User.first.preferences
+
+    sqs = Aws::SQS::Client.new(
+      region: user_prefs[:aws_region],
+      access_key_id: user_prefs[:aws_id],
+      secret_access_key: user_prefs[:aws_secret]
+    )
+
+    response = sqs.receive_message({
+      queue_url: user_prefs[:sqs_url],
+      attribute_names: ["All"],
+      max_number_of_messages: 10
+      })
+
+    response.messages.each do |m|
+      m_hash = JSON.parse(m.body)
+      receipt_handle = m.receipt_handle
+
+      # message information from twilio
+      account_sid = m_hash["AccountSid"]
+      api_version = m_hash["ApiVersion"]
+      from_city = m_hash["FromCity"]
+      from_country = m_hash["FromCountry"]
+      from_num = m_hash["From"]
+      from_state = m_hash["FromState"]
+      from_zip = m_hash["FromZip"]
+      message_sid = m_hash["MessageSid"]
+      message_body = m_hash["Body"]
+      num_media = m_hash["NumMedia"]
+      num_segments = m_hash["NumSegments"]
+      sms_id = m_hash["SmsSid"]
+      sms_status = m_hash["SmsStatus"]
+      sms_message_sid = m_hash["SmsMessageSid"]
+      to_city = m_hash["ToCity"]
+      to_country = m_hash["ToCountry"]
+      to_num = m_hash["To"]
+      to_state = m_hash["ToState"]
+      to_zip = m_hash["ToZip"]
+
+      if message_body.downcase == "forward"
+        updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "true"} )
+        User.first.update(preferences: updated_user_prefs)
+        Message.send_quick_twilio_sms("iMessage forwarding started.")
+      elsif message_body.downcase == "unforward"
+        updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "false"} )
+        User.first.update(preferences: updated_user_prefs)
+        Message.send_quick_twilio_sms("iMessage forwarding stopped.")
+      else
+        Message.send_quick_twilio_sms("Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.")
+      end
+
+      resp = sqs.delete_message({
+        queue_url: user_prefs[:sqs_url], #
+        receipt_handle: receipt_handle,
+      })
+    end
+
+  end
+
   def self.import_messages(n=20)
     message_tools = MessageTools.new
     messages = message_tools.get_messages(n)
@@ -60,6 +121,13 @@ class Message < ApplicationRecord
       )
 
     end
+  end
+
+  def self.send_quick_twilio_sms(message_body)
+    account_sid = User.first.preferences[:twilio_account_id]
+    auth_token = User.first.preferences[:twilio_auth_token]
+    @client = Twilio::REST::Client.new(account_sid, auth_token)
+    message = @client.messages.create( body: message_body, from: User.first.preferences[:twilio_number], to: User.first.preferences[:phone_number] )
   end
 
   def self.send_twilio_sms
