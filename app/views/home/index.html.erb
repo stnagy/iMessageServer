@@ -19,19 +19,19 @@
         <div class="row">
           <div class="col">
             <div style="padding-top:10px" class="form-group">
-              <label for="iphone_number">iPhone Number (if any)</label>
+              <label for="iphone_number">iPhone Number (optional)</label>
               <input class="form-control" id="iphone_number" type="text" value="<%= @user.preferences[:iphone_number] %>">
             </div>
           </div>
           <div class="col">
             <div style="padding-top:10px" class="form-group">
-              <label for="phone_number">SMS Forwarding Phone Number</label>
+              <label for="phone_number">SMS Forwarding Phone Number (required)</label>
               <input class="form-control" id="phone_number" type="text" value="<%= @user.preferences[:phone_number] %>">
             </div>
           </div>
           <div class="col">
             <div style="padding-top:10px" class="form-group">
-              <label for="twilio_number">Twilio Phone Number</label>
+              <label for="twilio_number">Twilio Phone Number (required)</label>
               <input class="form-control" id="twilio_number" type="text" value="<%= @user.preferences[:twilio_number] %>">
             </div>
           </div>
@@ -41,13 +41,13 @@
         <div class="row">
           <div class="col">
             <div class="form-group">
-              <label for="twilio_account_id">Twilio Account SID</label>
+              <label for="twilio_account_id">Twilio Account SID (required)</label>
               <input class="form-control" id="twilio_account_id" type="text" value="<%= @user.preferences[:twilio_account_id] %>">
             </div>
           </div>
           <div class="col">
             <div class="form-group">
-              <label for="twilio_auth_token">Twilio Auth Token</label>
+              <label for="twilio_auth_token">Twilio Auth Token (required)</label>
               <input class="form-control" id="twilio_auth_token" type="text" value="<%= @user.preferences[:twilio_auth_token] %>">
             </div>
           </div>
@@ -57,13 +57,13 @@
         <div class="row">
           <div class="col">
             <div class="form-group">
-              <label for="aws_id">AWS ID (for SQS user)</label>
+              <label for="aws_id">AWS ID (for SQS user) (required)</label>
               <input class="form-control" id="aws_id" type="text" value="<%= @user.preferences[:aws_id] %>">
             </div>
           </div>
           <div class="col">
             <div class="form-group">
-              <label for="aws_secret">AWS Secret</label>
+              <label for="aws_secret">AWS Secret (required)</label>
               <input class="form-control" id="aws_secret" type="text" value="<%= @user.preferences[:aws_secret] %>">
             </div>
           </div>
@@ -73,13 +73,13 @@
         <div class="row">
           <div class="col">
             <div class="form-group">
-              <label for="aws_region">AWS Region</label>
+              <label for="aws_region">AWS Region (required)</label>
               <input class="form-control" id="aws_region" type="text" value="<%= @user.preferences[:aws_region] %>">
             </div>
           </div>
           <div class="col">
             <div class="form-group">
-              <label for="sqs_url">AWS SQS URL (FIFO)</label>
+              <label for="sqs_url">AWS SQS URL (FIFO) (required)</label>
               <input class="form-control" id="sqs_url" type="text" value="<%= @user.preferences[:sqs_url] %>">
             </div>
           </div>
@@ -163,5 +163,5 @@
   $("#sms_forwarding_enabled").click(function(e){
     custom_submit();
   })
-  
+
 </script>
