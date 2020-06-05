@@ -8,6 +8,9 @@ gem 'twilio-ruby'
 gem 'devise'
 gem 'aws-sdk', '~> 3'
 
+# update websocket to patch potential vulnerability
+gem "websocket-extensions", ">= 0.1.5"
+
 #---------------------#
 # STANDARD GEMS BELOW
 #---------------------#
