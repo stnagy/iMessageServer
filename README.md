@@ -104,16 +104,15 @@ You will need a [Twilio SMS account](https://www.twilio.com/sms) (free trial ava
 2. Clone or download this repository to a location on your Mac computer (running OS X) where it will not be accidentally deleted.
 3. Navigate to the directory containing this repository and into the iMessageServer folder.
 4. Run the command `rake setup:install`
-5. Once the above task has completed, navigate to the web interface (http://localhost:3000) to complete installation by providing required settings. The application will not forward iMessages until these settings are entered.
-6.
+5. Once the above task has completed, navigate to the web interface (http://localhost:3000) to complete installation by providing required settings. **The application will not forward iMessages until these settings are entered.**
 
 ## Usage
-Assuming installation completed successfully, the application can be controlled entirely from the phone you are forwarding messages to. Currently, the application only supports the following commands when sent to your Twilio number (i.e., the number Twilio uses to forward iMessages to you).
+Assuming installation and configuration are completed successfully as outlined above, the application can be controlled entirely from the phone you are forwarding messages to. Currently, the application only supports the following commands when sent to your Twilio number (i.e., the number Twilio uses to forward iMessages to you).
 1. `forward` (case insensitive) -- begins forwarding all iMessages received.
 2. `unforward` (case insensitive) -- stops forwarding all iMessages received.
-Currently, any other message sent to the Twilio number will elicit a response indicating the command is not supported.
+3. Currently, any other message sent to the Twilio number will elicit a response indicating the command is not supported.
     * IMPORTANT: Twilio supports standard SMS opt-in, opt-out, and help keywords (START, YES, UNSTOP, STOP, STOPALL, END, UNSUBSCRIBE, CANCEL, QUIT, HELP, and INFO). Using these keywords can opt-in and opt-out a telephone number from receiving messages from Twilio, but **these commands to not change the state of this application**. In other words, the opt-in command START will not cause iMessages to begin forwarding. Conversely, the opt-out command END will not cause the application to stop trying to forward iMessages
-3. **Your computer must be awake to forward iMessages.** On OS X, change energy saver preferences to:
+4. **Your computer must be awake to forward iMessages.** On OS X, change energy saver preferences to:
     * Check 'Prevent computer from sleeping automatically when the display is off'
     * Uncheck 'Put hard disks to sleep when possible'
 
