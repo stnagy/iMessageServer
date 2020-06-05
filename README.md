@@ -103,8 +103,9 @@ You will need a [Twilio SMS account](https://www.twilio.com/sms) (free trial ava
 1. **Complete the steps above to set up AWS and Twilio**
 2. Clone or download this repository to a location on your Mac computer (running OS X) where it will not be accidentally deleted.
 3. Navigate to the directory containing this repository and into the iMessageServer folder.
-4. Run the command `rake setup:install` and follow the on screen prompts. All of the information requested must be entered correctly for the application to run properly. The application will not run if any required information is omitted (except optional information, e.g. iPhone number).
-5. If some information was entered incorrectly, or some information needs to be changed, you may do so after installation using the web interface (see below).
+4. Run the command `rake setup:install`
+5. Once the above task has completed, navigate to the web interface (http://localhost:3000) to complete installation by providing required settings. The application will not forward iMessages until these settings are entered.
+6.
 
 ## Usage
 Assuming installation completed successfully, the application can be controlled entirely from the phone you are forwarding messages to. Currently, the application only supports the following commands when sent to your Twilio number (i.e., the number Twilio uses to forward iMessages to you).
@@ -118,7 +119,7 @@ Currently, any other message sent to the Twilio number will elicit a response in
 
 By default, the application installs with forwarding **disabled** to avoid charging your Twilio and AWS accounts unless you affirmatively turn on forwarding, meaning you must turn forwarding on for iMessage forwarding to begin.
 
-The application settings may also be controlled by a local web interface. To launch the local web server (not exposed to the internet), navigate to the directory containing this repository in Terminal, and (after installation) type the command `rails s`. This command starts the server. Once the server has started, navigate to http://localhost:3000/ in your browser.
+The application settings may also be controlled by a local web interface. To launch the local web server (not exposed to the internet), navigate to the directory containing this repository in Terminal, and (after installation) type the command `rails s -d`. This command starts the server. Once the server has started, navigate to http://localhost:3000/ in your browser. **The web server does not need to be running for iMessage forwarding.** The web interface is only required to change settings. 
 
 As of the writing of this readme, the following Twilio charges apply (PLEASE CONSULT [TWILIO'S PRICING PAGE](https://www.twilio.com/pricing) FOR UP TO DATE PRICING INFORMATION):
     * Forward Simple SMS -- $0.0075 (Twilio fee) + carrier fees
