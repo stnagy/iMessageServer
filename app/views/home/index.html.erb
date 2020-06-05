@@ -31,7 +31,7 @@
           </div>
           <div class="col">
             <div style="padding-top:10px" class="form-group">
-              <label for="phone_number">Twilio Phone Number</label>
+              <label for="twilio_number">Twilio Phone Number</label>
               <input class="form-control" id="twilio_number" type="text" value="<%= @user.preferences[:twilio_number] %>">
             </div>
           </div>
@@ -41,14 +41,46 @@
         <div class="row">
           <div class="col">
             <div class="form-group">
-              <label for="phone_number">Twilio Account SID</label>
+              <label for="twilio_account_id">Twilio Account SID</label>
               <input class="form-control" id="twilio_account_id" type="text" value="<%= @user.preferences[:twilio_account_id] %>">
             </div>
           </div>
           <div class="col">
             <div class="form-group">
-              <label for="phone_number">Twilio Auto Token</label>
+              <label for="twilio_auth_token">Twilio Auth Token</label>
               <input class="form-control" id="twilio_auth_token" type="text" value="<%= @user.preferences[:twilio_auth_token] %>">
+            </div>
+          </div>
+        </div>
+      </li>
+      <li class="list-group-item">
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label for="aws_id">AWS ID (for SQS user)</label>
+              <input class="form-control" id="aws_id" type="text" value="<%= @user.preferences[:aws_id] %>">
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <label for="aws_secret">AWS Secret</label>
+              <input class="form-control" id="aws_secret" type="text" value="<%= @user.preferences[:aws_secret] %>">
+            </div>
+          </div>
+        </div>
+      </li>
+      <li class="list-group-item">
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label for="aws_region">AWS Region</label>
+              <input class="form-control" id="aws_region" type="text" value="<%= @user.preferences[:aws_region] %>">
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <label for="sqs_url">AWS SQS URL (FIFO)</label>
+              <input class="form-control" id="sqs_url" type="text" value="<%= @user.preferences[:sqs_url] %>">
             </div>
           </div>
         </div>
@@ -70,15 +102,19 @@
 </div>
 
 <script>
-  $("#user-preferences-update").click(function(e){
-    e.preventDefault();
+
+  var custom_submit = function(){
     $("#user-preferences-update").prop('disabled', true);
     sms_forwarding_enabled = $("#sms_forwarding_enabled").is(':checked');
     iphone_number = $("#iphone_number").val();
     phone_number = $("#phone_number").val();
     twilio_number = $("#twilio_number").val();
     twilio_account_id = $("#twilio_account_id").val();
-    twilio_auth_token = $("#twilio_auth_token").val()
+    twilio_auth_token = $("#twilio_auth_token").val();
+    aws_id = $("#aws_id").val();
+    aws_secret = $("#aws_secret").val();
+    aws_region = $("#aws_region").val();
+    sqs_url = $("#sqs_url").val();
     $.post(
       "<%= update_preferences_path %>",
       { user: {
@@ -88,7 +124,11 @@
             phone_number: phone_number,
             twilio_number: twilio_number,
             twilio_account_id: twilio_account_id,
-            twilio_auth_token: twilio_auth_token }
+            twilio_auth_token: twilio_auth_token,
+            aws_id: aws_id,
+            aws_secret: aws_secret,
+            aws_region: aws_region,
+            sqs_url: sqs_url }
           }
       }
     ).done(function(data){
@@ -98,7 +138,11 @@
       $("#phone_number").val(data["phone_number"]);
       $("#twilio_number").val(data["twilio_number"]);
       $("#twilio_account_id").val(data["twilio_account_id"]);
-      $("#twilio_auth_token").val(data["twilio_auth_token"])
+      $("#twilio_auth_token").val(data["twilio_auth_token"]);
+      $("#aws_id").val(data["aws_id"]);
+      $("#aws_secret").val(data["aws_secret"]);
+      $("#aws_region").val(data["aws_region"]);
+      $("#sqs_url").val(data["sqs_url"]);
 
       $("#preference-save-status").append("<div class='alert alert-success' role='alert'>  Preferences successfully updated </div>").delay(5000).fadeOut("slow", function(){
         $("#preference-save-status").empty();
@@ -109,5 +153,15 @@
         "#user-preferences-update").prop('disabled', false)
       }, 500);
     })
+  }
+
+  $("#user-preferences-update").click(function(e){
+    e.preventDefault();
+    custom_submit();
   });
+
+  $("#sms_forwarding_enabled").click(function(e){
+    custom_submit();
+  })
+  
 </script>

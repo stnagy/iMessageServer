@@ -11,9 +11,15 @@ class Message < ApplicationRecord
     Contact.find(self.contact_messages.where(is_sender: false).pluck(:contact_id))
   end
 
+  # function to check the SQS queue for new commands received by twilio
   def self.check_twilio_sqs_queue
 
     user_prefs = User.first.preferences
+
+    # check to make sure required preferences are not nil.
+    unless User.is_enabled?
+      return false
+    end
 
     sqs = Aws::SQS::Client.new(
       region: user_prefs[:aws_region],
@@ -78,7 +84,13 @@ class Message < ApplicationRecord
 
   end
 
+  # function to import imessages from iMessage chat database
   def self.import_messages(n=20)
+
+    unless User.is_enabled?
+      return false
+    end
+
     message_tools = MessageTools.new
     messages = message_tools.get_messages(n)
 
@@ -129,21 +141,32 @@ class Message < ApplicationRecord
     end
   end
 
+  # function to send twilio SMS with a customizable message body
   def self.send_quick_twilio_sms(message_body)
+
+    unless User.is_enabled?
+      return false
+    end
+
     account_sid = User.first.preferences[:twilio_account_id]
     auth_token = User.first.preferences[:twilio_auth_token]
     @client = Twilio::REST::Client.new(account_sid, auth_token)
     message = @client.messages.create( body: message_body, from: User.first.preferences[:twilio_number], to: User.first.preferences[:phone_number] )
   end
 
+  # function to forward iMessages via twilio
   def self.send_twilio_sms
+
+    unless User.is_enabled?
+      return false
+    end
 
     #initialize twilio client
     account_sid = User.first.preferences[:twilio_account_id]
     auth_token = User.first.preferences[:twilio_auth_token]
     @client = Twilio::REST::Client.new(account_sid, auth_token)
 
-    #iterate over messages
+    #iterate over messages (ordered by time received)
     twilio_messages = Message.where(needs_sms_forwarding: true).order(rowid: :asc)
     twilio_messages.each do |m|
 

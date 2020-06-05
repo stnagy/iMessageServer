@@ -8,6 +8,17 @@ class User < ApplicationRecord
 
   before_update :format_phone_numbers
 
+  def self.is_enabled?
+
+    user_prefs = User.first.preferences
+    if (user_prefs[:sms_forwarding_enabled] == nil) || (user_prefs[:sqs_url] == nil) || (user_prefs[:aws_region] == nil) || (user_prefs[:aws_id] == nil) || (user_prefs[:aws_secret] == nil) || (user_prefs[:sqs_url] == nil) || (user_prefs[:phone_number] == nil) || (user_prefs[:twilio_number] == nil) || (user_prefs[:twilio_account_id] == nil) || (user_prefs[:twilio_auth_token] == nil)
+      return false
+    end
+
+    return true
+
+  end
+
   def format_phone_numbers
 
     unformatted_iphone_number = self.preferences[:iphone_number]
