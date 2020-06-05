@@ -119,16 +119,16 @@ Currently, any other message sent to the Twilio number will elicit a response in
 
 By default, the application installs with forwarding **disabled** to avoid charging your Twilio and AWS accounts unless you affirmatively turn on forwarding, meaning you must turn forwarding on for iMessage forwarding to begin.
 
-The application settings may also be controlled by a local web interface. To launch the local web server (not exposed to the internet), navigate to the directory containing this repository in Terminal, and (after installation) type the command `rails s -d`. This command starts the server. Once the server has started, navigate to http://localhost:3000/ in your browser. **The web server does not need to be running for iMessage forwarding.** The web interface is only required to change settings. 
+The application settings may also be controlled by a local web interface. To launch the local web server (not exposed to the internet), navigate to the directory containing this repository in Terminal, and (after installation) type the command `rails s -d`. This command starts the server. Once the server has started, navigate to http://localhost:3000/ in your browser. **The web server does not need to be running for iMessage forwarding.** The web interface is only required to change settings.
 
 As of the writing of this readme, the following Twilio charges apply (PLEASE CONSULT [TWILIO'S PRICING PAGE](https://www.twilio.com/pricing) FOR UP TO DATE PRICING INFORMATION):
-    * Forward Simple SMS -- $0.0075 (Twilio fee) + carrier fees
-    * Forward Picture Messages -- $0.02 (Twilio fee) + carrier fees
-    * Recieve Simple SMS (e.g. `forward` and `unforward` command) -- $0.0075 (Twilio fee) + carrier fees
+  * Forward Simple SMS -- $0.0075 (Twilio fee) + carrier fees
+  * Forward Picture Messages -- $0.02 (Twilio fee) + carrier fees
+  * Recieve Simple SMS (e.g. `forward` and `unforward` command) -- $0.0075 (Twilio fee) + carrier fees
 
 As of the writing of this readme, the following AWS charges apply (PLEASE CONSULT [AWS'S PRICING PAGE](https://aws.amazon.com/sqs/pricing/) FOR UP TO THE DATE PRICING INFORMATION):
-    * The first million requests are free, after that, the following charges apply:
-        * FIFO Message -- $0.0000005 per request ($0.50 per million requests)
-        * Standard Message -- $0.0000004 per request ($0.40 per million requests)
+  * The first million requests are free, after that, the following charges apply:
+      * FIFO Message -- $0.0000005 per request ($0.50 per million requests)
+      * Standard Message -- $0.0000004 per request ($0.40 per million requests)
 
 For manually updating cron (advanced users): `whenever --update-crontab --set environment='development'`
