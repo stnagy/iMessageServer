@@ -1,10 +1,10 @@
 # iMessageServer
 
-iMessageServer is a ruby/rails application designed to extract new iMessages from the iMessage database in the OS X operating system, format the extracted information into an SMS message, and transmit that message via [Twilio's SMS API](https://www.twilio.com/sms/api). The application can be controlled via the phone number receiving forwarded iMessages (via `forward` and `unforward` commands) or via a simple local web interface.
+iMessageServer is a ruby/rails application designed to extract new iMessages from the iMessage database in the OS X operating system, format the extracted information into an SMS message, and transmit that message via [Twilio's SMS API](https://www.twilio.com/sms/api). The application also permits responding to iMessages via SMS commands. The application can be controlled via the phone number receiving forwarded iMessages (e.g. `forward`, `unforward`, and `r`/`m`  commands) or via a simple local web interface.
 
 For this application to function, the user must be able to create a [Twilio account](https://www.twilio.com/sms/api) and an [AWS account](http://console.aws.amazon.com/). **This application will not run for free. Twilio and AWS charge fees according to their fee schedules ([Twilio](https://www.twilio.com/pricing), [AWS](https://aws.amazon.com/sqs/pricing/)).** For personal use, however, AWS charges will likely be zero (first 1 million `forward` and `unforward` commands per month are free as of the writing of this readme).
 
-The application does not alter the operating system's iMessage database, but instead makes a temporary copy of the database in this application's directory each time iMessages are extracted. Accordingly, this application is not designed to respond to iMessage chats, but simply enables forwarding of the chat contents via SMS for users who are away from iMessage.
+The application does not alter the operating system's iMessage database, but instead makes a temporary copy of the database in this application's directory each time iMessages are extracted.
 
 This repository has only been tested on OS X Catalina.
 
@@ -111,9 +111,9 @@ Assuming installation and configuration are completed successfully as outlined a
 1. `forward` (case insensitive) -- begins forwarding all iMessages received.
 2. `unforward` (case insensitive) -- stops forwarding all iMessages received.
 3. `r` or `m` + SPACE + 10-digit phone number + message -- will send an iMessage or SMS message containing the message to the 10-digit phone number **as long as the phone number is in the OS X contacts app**.
-    * e.g. `r 5555555555 test message` or `r 5555555555 test message`
-    * this command will also work with 11 digit numbers, e.g. `r 15555555555 test message`
-    * if there is interest, will work on implementing international support for non-USA/Canada numbers. 
+    * e.g. `r 5555555555 test message` or `m 5555555555 test message`
+    * this command will also work with 11 digit numbers, with or without the "+" prefix, e.g. `r 15555555555 test message` or `r +15555555555 test message`.
+    * if there is interest, will work on implementing international support for non-USA/Canada numbers.
 4. Currently, any other message sent to the Twilio number will elicit a response indicating the command is not supported.
     * IMPORTANT: Twilio supports standard SMS opt-in, opt-out, and help keywords (START, YES, UNSTOP, STOP, STOPALL, END, UNSUBSCRIBE, CANCEL, QUIT, HELP, and INFO). Using these keywords can opt-in and opt-out a telephone number from receiving messages from Twilio, but **these commands to not change the state of this application**. In other words, the opt-in command START will not cause iMessages to begin forwarding. Conversely, the opt-out command END will not cause the application to stop trying to forward iMessages
 4. **Your computer must be awake to forward iMessages.** On OS X, change energy saver preferences to:
