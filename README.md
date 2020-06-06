@@ -110,7 +110,11 @@ You will need a [Twilio SMS account](https://www.twilio.com/sms) (free trial ava
 Assuming installation and configuration are completed successfully as outlined above, the application can be controlled entirely from the phone you are forwarding messages to. Currently, the application only supports the following commands when sent to your Twilio number (i.e., the number Twilio uses to forward iMessages to you).
 1. `forward` (case insensitive) -- begins forwarding all iMessages received.
 2. `unforward` (case insensitive) -- stops forwarding all iMessages received.
-3. Currently, any other message sent to the Twilio number will elicit a response indicating the command is not supported.
+3. `r` or `m` + SPACE + 10-digit phone number + message -- will send an iMessage or SMS message containing the message to the 10-digit phone number **as long as the phone number is in the OS X contacts app**.
+    * e.g. `r 5555555555 test message` or `r 5555555555 test message`
+    * this command will also work with 11 digit numbers, e.g. `r 15555555555 test message`
+    * if there is interest, will work on implementing international support for non-USA/Canada numbers. 
+4. Currently, any other message sent to the Twilio number will elicit a response indicating the command is not supported.
     * IMPORTANT: Twilio supports standard SMS opt-in, opt-out, and help keywords (START, YES, UNSTOP, STOP, STOPALL, END, UNSUBSCRIBE, CANCEL, QUIT, HELP, and INFO). Using these keywords can opt-in and opt-out a telephone number from receiving messages from Twilio, but **these commands to not change the state of this application**. In other words, the opt-in command START will not cause iMessages to begin forwarding. Conversely, the opt-out command END will not cause the application to stop trying to forward iMessages
 4. **Your computer must be awake to forward iMessages.** On OS X, change energy saver preferences to:
     * Check 'Prevent computer from sleeping automatically when the display is off'

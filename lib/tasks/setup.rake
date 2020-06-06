@@ -15,11 +15,14 @@ namespace :setup do
       sms_forwarding_enabled: "false",
     }
 
-    user = User.first_or_create
-    user_prefs = User.first.preferences
-    preferences = user_prefs.merge(preferences)
+    user = User.where(id: 1).first_or_create
+    user.update!(email: "none@none.com", password: "password")
 
-    user.update(preferences: preferences)
+    if user.preferences == nil
+      user.update(preferences: preferences)
+    else
+      user.update!(preferences: user.preferences.merge(preferences))
+    end
 
     puts "Updating cron jobs..."
     `whenever --update-crontab --set environment='development'`

@@ -2,6 +2,7 @@ class Message < ApplicationRecord
 
   has_many :contact_messages
   has_many :contacts, through: :contact_messages
+  belongs_to :chat
 
   def sender
     Contact.find(self.contact_messages.where(is_sender: true).first.contact_id)
@@ -62,6 +63,7 @@ class Message < ApplicationRecord
       if from_num == user_prefs[:phone_number]
 
         # supported commands are "forward" and "unforward" (for now)
+        # beta support for replying with syntax "r {phone_number} {message}"
         if message_body.downcase == "forward"
           updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "true"} )
           User.first.update(preferences: updated_user_prefs)
@@ -70,6 +72,21 @@ class Message < ApplicationRecord
           updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "false"} )
           User.first.update(preferences: updated_user_prefs)
           Message.send_quick_twilio_sms("iMessage forwarding stopped.")
+        elsif message_body[0..13].downcase.match(/^[rm] \+\d{11}/)
+          phone_number = message_body[2..13]
+          body = message_body[15..]
+          Message.send_reply(phone_number, body)
+          Message.send_quick_twilio_sms("Message delivered to #{phone_number}.")
+        elsif message_body[0..12].downcase.match(/^[rm] \d{11}/)
+          phone_number = "+" + message_body[2..12]
+          body = message_body[14..]
+          Message.send_reply(phone_number, body)
+          Message.send_quick_twilio_sms("Message deliverd to #{phone_number}.")
+        elsif message_body[0..12].downcase.match(/^[rm] \d{10}/)
+          phone_number = "+1" + message_body[2..11]
+          body = message_body[13..]
+          Message.send_reply(phone_number, body)
+          Message.send_quick_twilio_sms("Message delivered to #{phone_number}.")
         else
           Message.send_quick_twilio_sms("Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.")
         end
@@ -105,6 +122,10 @@ class Message < ApplicationRecord
       else
         needs_sms_forwarding = false
       end
+
+      chat = Chat.where(guid: m["chat_guid"]).first_or_create
+      message.chat_id = chat.id
+
       message.save
 
       # update sender
@@ -183,6 +204,34 @@ class Message < ApplicationRecord
       message = @client.messages.create( body: message_body, from: User.first.preferences[:twilio_number], to: User.first.preferences[:phone_number] )
       m.update(needs_sms_forwarding: false, twilio_message_id: message.sid)
     end
+  end
+
+  def self.send_reply(phone_number, message_body)
+
+    # try sending iMessage
+    OsxTools.send_imessage(phone_number, message_body)
+
+    # check recent messages to see if iMessage sent
+    # if not, then send SMS
+    tools = MessageTools.new
+    messages = tools.get_messages(10)
+
+    messages.each do |m|
+      if (m["text"] == message_body)
+        m["other_recipients"].each do |r|
+          if r[:contact] == phone_number
+            error_code = m["error"]
+            if error_code != 0
+              OsxTools.send_sms_message(phone_number, message_body)
+              break
+            end
+          end
+        end
+      end
+    end
+
+    return
+
   end
 
 end

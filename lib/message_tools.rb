@@ -69,11 +69,13 @@ class MessageTools
       message["sender_contact"] = sender_contact
       message["sender_name"] = sender_name
 
-      # get other recipients
+      # get chat info and other recipients
       chat_id = nil
       other_handles = []
       chat_messages.each { |cm| chat_id = cm["chat_id"] if cm["message_id"] == message_id }
       if chat_id
+        message["chat_id"] = chat_id
+        chats.each { |c| message["chat_guid"] = c["guid"] if ( c["ROWID"] == chat_id ) }
         chat_handles.each { |ch| other_handles << ch["handle_id"] if ( (ch["chat_id"] == chat_id) && (ch["handle_id"] != sender_handle_id) ) }
         other_handles.each do |oh|
           handles.each do |h|
@@ -176,7 +178,7 @@ class MessageTools
 
   end
 
-  private
+  # private
 
   def get_raw_messages(n=100)
 
