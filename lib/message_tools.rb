@@ -9,6 +9,10 @@ class MessageTools
     @temp_db_file_dir = Rails.root.to_s + "/tmp/storage/"
     @temp_db_file = Rails.root.to_s + "/tmp/storage/chat.db"
     @db = nil
+
+    # check temp storage directory exists, if not, create it
+    Dir.mkdir(@temp_db_file_dir) if !File.directory?(@temp_db_file_dir)
+
   end
 
   def get_messages(n=100)
