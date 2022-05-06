@@ -65,7 +65,10 @@ class MessageTools
         end
         if contact_id
           contact_record = contact_records[contact_id - 1]
-          sender_name = contact_record["ZFIRSTNAME"] + " " + contact_record["ZLASTNAME"]
+          if contact_record["ZFIRSTNAME"] != nil then first_name = contact_record["ZFIRSTNAME"] else first_name = "" end
+          if contact_record["ZLASTNAME"] != nil then last_name = contact_record["ZLASTNAME"] else last_name = "" end
+
+          sender_name = first_name + " " + last_name
         end
 
       end
@@ -91,7 +94,10 @@ class MessageTools
               end
               if contact_id
                 contact_record = contact_records[contact_id - 1]
-                recipient_name = contact_record["ZFIRSTNAME"] + " " + contact_record["ZLASTNAME"]
+                if contact_record["ZFIRSTNAME"] != nil then first_name = contact_record["ZFIRSTNAME"] else first_name = "" end
+                if contact_record["ZLASTNAME"] != nil then last_name = contact_record["ZLASTNAME"] else last_name = "" end
+
+                recipient_name = first_name + " " + last_name
               end
               other_recipients << { "contact": recipient_number, "name": recipient_name }
             end
