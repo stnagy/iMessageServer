@@ -34,7 +34,11 @@ class Message < ApplicationRecord
       max_number_of_messages: 10
       })
 
-    response.messages.uniq.each do |m|
+    response.messages.each do |m|
+
+      # use to deduplicate
+      outgoing_messages = []
+
       m_hash = JSON.parse(m.body)
       receipt_handle = m.receipt_handle
 
@@ -75,30 +79,30 @@ class Message < ApplicationRecord
         elsif message_body[0..13].downcase.match(/^[rm] \+\d{11}/)
           phone_number = message_body[2..13]
           body = message_body[15..]
-          Message.send_reply(phone_number, body)
-          Message.send_quick_twilio_sms("Message delivered to #{phone_number}.")
+          Message.send_reply(phone_number, body) unless outgoing_messages.include?([phone_number, body])
+          Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") unless outgoing_messages.include?([phone_number, body])
+          outgoing_messages.append([phone_number, body])
         elsif message_body[0..12].downcase.match(/^[rm] \d{11}/)
           phone_number = "+" + message_body[2..12]
           body = message_body[14..]
-          Message.send_reply(phone_number, body)
-          Message.send_quick_twilio_sms("Message deliverd to #{phone_number}.")
+          Message.send_reply(phone_number, body) unless outgoing_messages.include?([phone_number, body])
+          Message.send_quick_twilio_sms("Message deliverd to #{phone_number}.") unless outgoing_messages.include?([phone_number, body])
         elsif message_body[0..12].downcase.match(/^[rm] \d{10}/)
           phone_number = "+1" + message_body[2..11]
           body = message_body[13..]
-          Message.send_reply(phone_number, body)
-          Message.send_quick_twilio_sms("Message delivered to #{phone_number}.")
+          Message.send_reply(phone_number, body) unless outgoing_messages.include?([phone_number, body])
+          Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") unless outgoing_messages.include?([phone_number, body])
         else
           Message.send_quick_twilio_sms("Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.")
         end
       end
-    end
 
-    response.messages.each do |m|
       # delete message when done
       resp = sqs.delete_message({
         queue_url: user_prefs[:sqs_url], #
         receipt_handle: receipt_handle,
       })
+
     end
 
   end
