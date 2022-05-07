@@ -34,7 +34,7 @@ class Message < ApplicationRecord
       max_number_of_messages: 10
       })
 
-    response.messages.each do |m|
+    response.messages.uniq.each do |m|
       m_hash = JSON.parse(m.body)
       receipt_handle = m.receipt_handle
 
@@ -59,7 +59,7 @@ class Message < ApplicationRecord
       to_state = m_hash["ToState"]
       to_zip = m_hash["ToZip"]
 
-      # only forwarded number can change settings remotely
+      # only forwarded number can access api
       if from_num == user_prefs[:phone_number]
 
         # supported commands are "forward" and "unforward" (for now)
@@ -91,7 +91,9 @@ class Message < ApplicationRecord
           Message.send_quick_twilio_sms("Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.")
         end
       end
+    end
 
+    response.messages.each do |m|
       # delete message when done
       resp = sqs.delete_message({
         queue_url: user_prefs[:sqs_url], #
