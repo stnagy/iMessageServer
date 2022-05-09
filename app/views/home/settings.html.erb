@@ -1,0 +1,174 @@
+<div class='container-fluid flex-grow-1 flex-column fill bg-dark'>
+<div class='row'>
+  <%= render 'home/sidebar' %>
+
+  <div class='col-10 mt-2'>
+    <%= form_with url: update_preferences_path do %>
+      <ul class="list-group">
+        <li class="list-group-item list-group-item-dark">
+          <div class="row">
+            <div class="col">
+              <div class="custom-control custom-switch">
+                <% if @user.preferences[:sms_forwarding_enabled].downcase == "true" %>
+                  <input type="checkbox" class="custom-control-input" id="sms_forwarding_enabled" checked="checked">
+                <% else %>
+                  <input type="checkbox" class="custom-control-input" id="sms_forwarding_enabled">
+                <% end %>
+                <label class="custom-control-label" for="sms_forwarding_enabled">Enable SMS Forwarding</label>
+              </div>
+            </div>
+          </div>
+        </li>
+        <li class="list-group-item list-group-item-secondary">
+          <div class="row">
+            <div class="col">
+              <div style="padding-top:10px" class="form-group">
+                <label for="iphone_number">iPhone Number (optional)</label>
+                <input class="form-control bg-dark text-white" id="iphone_number" type="text" value="<%= @user.preferences[:iphone_number] %>">
+              </div>
+            </div>
+            <div class="col">
+              <div style="padding-top:10px" class="form-group">
+                <label for="phone_number">SMS Forwarding Phone Number (required)</label>
+                <input class="form-control bg-dark text-white" id="phone_number" type="text" value="<%= @user.preferences[:phone_number] %>">
+              </div>
+            </div>
+            <div class="col">
+              <div style="padding-top:10px" class="form-group">
+                <label for="twilio_number">Twilio Phone Number (required)</label>
+                <input class="form-control bg-dark text-white" id="twilio_number" type="text" value="<%= @user.preferences[:twilio_number] %>">
+              </div>
+            </div>
+          </div>
+        </li>
+        <li class="list-group-item list-group-item-secondary">
+          <div class="row">
+            <div class="col">
+              <div class="form-group">
+                <label for="twilio_account_id">Twilio Account SID (required)</label>
+                <input class="form-control bg-dark text-white" id="twilio_account_id" type="text" value="<%= @user.preferences[:twilio_account_id] %>">
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group">
+                <label for="twilio_auth_token">Twilio Auth Token (required)</label>
+                <input class="form-control bg-dark text-white" id="twilio_auth_token" type="text" value="<%= @user.preferences[:twilio_auth_token] %>">
+              </div>
+            </div>
+          </div>
+        </li>
+        <li class="list-group-item list-group-item-secondary">
+          <div class="row">
+            <div class="col">
+              <div class="form-group">
+                <label for="aws_id">AWS ID (for SQS user) (required)</label>
+                <input class="form-control bg-dark text-white" id="aws_id" type="text" value="<%= @user.preferences[:aws_id] %>">
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group">
+                <label for="aws_secret">AWS Secret (required)</label>
+                <input class="form-control bg-dark text-white" id="aws_secret" type="text" value="<%= @user.preferences[:aws_secret] %>">
+              </div>
+            </div>
+          </div>
+        </li>
+        <li class="list-group-item list-group-item-secondary">
+          <div class="row">
+            <div class="col">
+              <div class="form-group">
+                <label for="aws_region">AWS Region (required)</label>
+                <input class="form-control bg-dark text-white" id="aws_region" type="text" value="<%= @user.preferences[:aws_region] %>">
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group">
+                <label for="sqs_url">AWS SQS URL (FIFO) (required)</label>
+                <input class="form-control bg-dark text-white" id="sqs_url" type="text" value="<%= @user.preferences[:sqs_url] %>">
+              </div>
+            </div>
+          </div>
+        </li>
+        <li class="list-group-item list-group-item-secondary">
+          <div class="row">
+            <div class="col">
+              <%= submit_tag "Update", class: "btn btn-primary", id:"user-preferences-update" %>
+            </div>
+          </div>
+        </li>
+      </ul>
+    <% end %>
+    <div class="row" style="padding-top:10px">
+      <div class="col">
+        <div id="preference-save-status"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+
+  var custom_submit = function(){
+    $("#user-preferences-update").prop('disabled', true);
+    sms_forwarding_enabled = $("#sms_forwarding_enabled").is(':checked');
+    iphone_number = $("#iphone_number").val();
+    phone_number = $("#phone_number").val();
+    twilio_number = $("#twilio_number").val();
+    twilio_account_id = $("#twilio_account_id").val();
+    twilio_auth_token = $("#twilio_auth_token").val();
+    aws_id = $("#aws_id").val();
+    aws_secret = $("#aws_secret").val();
+    aws_region = $("#aws_region").val();
+    sqs_url = $("#sqs_url").val();
+    $.post(
+      "<%= update_preferences_path %>",
+      { user: {
+        preferences:
+          { sms_forwarding_enabled: sms_forwarding_enabled,
+            iphone_number: iphone_number,
+            phone_number: phone_number,
+            twilio_number: twilio_number,
+            twilio_account_id: twilio_account_id,
+            twilio_auth_token: twilio_auth_token,
+            aws_id: aws_id,
+            aws_secret: aws_secret,
+            aws_region: aws_region,
+            sqs_url: sqs_url }
+          }
+      }
+    ).done(function(data){
+
+      $("#sms_forwarding_enabled").prop('checked', data["ms_forwarding_enabled"]);
+      $("#iphone_number").val(data["iphone_number"]);
+      $("#phone_number").val(data["phone_number"]);
+      $("#twilio_number").val(data["twilio_number"]);
+      $("#twilio_account_id").val(data["twilio_account_id"]);
+      $("#twilio_auth_token").val(data["twilio_auth_token"]);
+      $("#aws_id").val(data["aws_id"]);
+      $("#aws_secret").val(data["aws_secret"]);
+      $("#aws_region").val(data["aws_region"]);
+      $("#sqs_url").val(data["sqs_url"]);
+
+      $("#preference-save-status").append("<div class='alert alert-success' role='alert'>  Preferences successfully updated </div>").delay(5000).fadeOut("slow", function(){
+        $("#preference-save-status").empty();
+        $("#preference-save-status").fadeIn();
+      });
+
+      setTimeout(function(){$(
+        "#user-preferences-update").prop('disabled', false)
+      }, 500);
+    })
+  }
+
+  $("#user-preferences-update").click(function(e){
+    e.preventDefault();
+    custom_submit();
+  });
+
+  $("#sms_forwarding_enabled").click(function(e){
+    custom_submit();
+  })
+
+</script>

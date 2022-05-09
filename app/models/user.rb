@@ -8,6 +8,8 @@ class User < ApplicationRecord
 
   before_update :format_phone_numbers
 
+  has_many :shortcuts
+
   def self.is_enabled?
 
     user_prefs = User.first.preferences
@@ -24,7 +26,7 @@ class User < ApplicationRecord
     if self.preferences.nil?
       return
     end
-    
+
     if self.preferences[:iphone_number]
 
       unformatted_iphone_number = self.preferences[:iphone_number]

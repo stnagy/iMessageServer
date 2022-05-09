@@ -1,0 +1,138 @@
+<div class='container-fluid flex-grow-1 flex-column fill bg-dark'>
+  <div class='row'>
+    <%= render 'home/sidebar' %>
+
+    <div class='col-10 mt-2'>
+      <ul class="list-group">
+        <li class="list-group-item list-group-item-dark">
+          <div class="row">
+            <div class="col-4">
+              Shortcut
+            </div>
+            <div class="col-4">
+              Phone Number
+            </div>
+            <div class="col-4">
+              Action
+            </div>
+          </div>
+        </li>
+        <% @shortcuts.each do |s| %>
+        <li class="list-group-item list-group-item-secondary" id="shortcut-row-<%=s[:id]%>">
+          <div class="row">
+            <div class="col-4">
+              <input class="form-control bg-dark text-white" type="text" disabled value="<%= s[:name] %>">
+            </div>
+            <div class="col-4">
+              <input class="form-control bg-dark text-white" type="text" disabled value="<%= s[:number] %>">
+            </div>
+            <div class="col-4">
+              <button type="button" class="btn btn-secondary delete-shortcut" id="delete-shortcut-<%=s[:id]%>" data-shortcut="<%=s[:id]%>">Delete</button>
+              <button style="display: none" type="button" class="btn btn-secondary cancel-delete-shortcut" id="cancel-delete-shortcut-<%=s[:id]%>" data-shortcut="<%=s[:id]%>">Cancel</button>
+              <button style="display: none" type="button" class="btn btn-danger confirm-delete-shortcut" id="confirm-delete-shortcut-<%=s[:id]%>" data-shortcut="<%=s[:id]%>">Confirm</button>
+            </div>
+          </div>
+        </li>
+        <% end %>
+        <li class="list-group-item list-group-item-secondary">
+          <%= form_with url: add_shortcut_path do %>
+          <div class='row'>
+            <div class="col-4">
+              <button type="button" class="btn btn-dark shortcut-form-button" id="toggle-shortcut-form">+ Add Shortcut</button>
+              <input style="display: none" class="form-control bg-dark text-white shortcut-form" id="shortcut_name" type="text" value="<%= @shortcut[:name] %>">
+            </div>
+            <div class="col-4">
+              <input style="display: none" class="form-control bg-dark text-white shortcut-form" id="shortcut_number" type="text" value="<%= @shortcut[:number] %>">
+            </div>
+            <div class="col-4">
+              <div style="display: none" class="shortcut-form">
+                <%= submit_tag "+ Add", class: "btn btn-dark", id:"add-shortcut-button" %>
+                <button type="button" id='cancel-button' class="btn btn-secondary">Cancel</button>
+              </div>
+            </div>
+          </div>
+          <% end %>
+        </li>
+      </ul>
+      <div class="row" style="padding-top:10px">
+        <div class="col">
+          <div id="shortcut-save-status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  var custom_submit = function(){
+    $("#add-shortcut-button").prop('disabled', true);
+    shortcut_name = $("#shortcut_name").val();
+    shortcut_number = $("#shortcut_number").val();
+    $.post(
+      "<%= add_shortcut_path %>",
+      { shortcut:
+        { name: shortcut_name,
+          number: shortcut_number }
+      }
+    ).done(function(data){
+      console.log(data);
+      console.log("printed data");
+      // add new row with shortcut
+
+      $("#shortcut-save-status").append("<div class='alert alert-success' role='alert'>  Shortcut successfully added </div>").delay(5000).fadeOut("slow", function(){
+        $("#shortcut-save-status").empty();
+        $("#shortcut-save-status").fadeIn();
+      });
+
+      setTimeout(function(){$(
+        "#user-preferences-update").prop('disabled', false)
+      }, 500);
+    })
+  }
+
+  var custom_delete = function (shortcut_id) {
+    $.post(
+      "<%= delete_shortcut_path %>",
+      { shortcut:
+        { id: shortcut_id }
+      }
+    ).done(function(data){});
+  }
+
+  $("#add-shortcut-button").click(function(e){
+    e.preventDefault();
+    custom_submit();
+  });
+
+  $("#toggle-shortcut-form").click(function(e){
+    $("#toggle-shortcut-form").hide();
+    $(".shortcut-form").show();
+  })
+
+  $("#cancel-button").click(function(e){
+    $("#toggle-shortcut-form").show();
+    $(".shortcut-form").hide();
+  })
+
+  $(".delete-shortcut").click(function(e){
+    shortcut_id = $(this).data("shortcut");
+    $("#delete-shortcut-" + shortcut_id).hide();
+    $("#confirm-delete-shortcut-" + shortcut_id).show();
+    $("#cancel-delete-shortcut-" + shortcut_id).show();
+  });
+
+  $(".cancel-delete-shortcut").click(function(e){
+    shortcut_id = $(this).data("shortcut");
+    $("#cancel-delete-shortcut-" + shortcut_id).hide();
+    $("#confirm-delete-shortcut-" + shortcut_id).hide();
+    $("#delete-shortcut-" + shortcut_id).show();
+  });
+
+  $(".confirm-delete-shortcut").click(function(e){
+    shortcut_id = $(this).data("shortcut");
+    custom_delete(shortcut_id);
+    $("#shortcut-row-" + shortcut_id).hide();
+  });
+
+</script>

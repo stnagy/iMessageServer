@@ -1,8 +1,20 @@
 class ApplicationController < ActionController::Base
 
-  def home
+  def chats
     @user = User.first
-    render "home/index"
+    render "home/chats"
+  end
+
+  def shortcuts
+    @user = User.first
+    @shortcut = {:name => ""}
+    @shortcuts = @user.shortcuts
+    render "home/shortcuts"
+  end
+
+  def settings
+    @user = User.first
+    render "home/settings"
   end
 
   def update_preferences
@@ -12,6 +24,19 @@ class ApplicationController < ActionController::Base
     @user.update(preferences: user_prefs)
     @user.reload
     render json: @user.preferences
+  end
+
+  def add_shortcut
+    print "controller"
+    @shortcut = User.first.shortcuts.new(name: params[:shortcut][:name], number: params[:shortcut][:number].to_i)
+    @shortcut.save
+    render json: @shortcut
+  end
+
+  def delete_shortcut
+    @shortcut = Shortcut.find(params[:shortcut][:id])
+    @shortcut.destroy
+    render :json => :deleted
   end
 
   private

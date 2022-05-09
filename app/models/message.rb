@@ -68,14 +68,36 @@ class Message < ApplicationRecord
 
         # supported commands are "forward" and "unforward" (for now)
         # beta support for replying with syntax "r {phone_number} {message}"
+
+        # map user shortcuts to regex for use below
+        shortcut_regex = User.first.shortcuts.map { |s| /(^[rm]) (#{s.name}) (.+)/i }
+
+        # forward command -- start forwarding imessages
         if message_body.downcase == "forward"
           updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "true"} )
           User.first.update(preferences: updated_user_prefs)
           Message.send_quick_twilio_sms("iMessage forwarding started.")
+
+        # unforward command -- stop forwarding imessages
         elsif message_body.downcase == "unforward"
           updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "false"} )
           User.first.update(preferences: updated_user_prefs)
           Message.send_quick_twilio_sms("iMessage forwarding stopped.")
+
+        # match user-defined shortcuts
+        elsif shortcut_regex.any? { |pattern| pattern.match?(message_body) }
+          shortcut_regex.each do |p|
+            if shortcut_match = message_body.match(p)
+              command, shortcut_name, body = shortcut_match.captures
+              phone_number = User.first.shortcuts.find_by('lower(name) = ?', shortcut_name.downcase()).number
+              Message.send_reply(phone_number, body) unless outgoing_messages.include?([phone_number, body])
+              Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") unless outgoing_messages.include?([phone_number, body])
+              outgoing_messages.append([phone_number, body])
+              break
+            end
+          end
+
+        # match standard 9 and 10 digit phone numbers
         elsif message_body[0..13].downcase.match(/^[rm] \+\d{11}/)
           phone_number = message_body[2..13]
           body = message_body[15..]
@@ -92,6 +114,8 @@ class Message < ApplicationRecord
           body = message_body[13..]
           Message.send_reply(phone_number, body) unless outgoing_messages.include?([phone_number, body])
           Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") unless outgoing_messages.include?([phone_number, body])
+
+        # else, return an error message via text
         else
           Message.send_quick_twilio_sms("Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.")
         end
