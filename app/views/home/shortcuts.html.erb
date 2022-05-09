@@ -3,7 +3,7 @@
     <%= render 'home/sidebar' %>
 
     <div class='col-10 mt-2'>
-      <ul class="list-group">
+      <ul class="list-group" id="add-shortcut-ul">
         <li class="list-group-item list-group-item-dark">
           <div class="row">
             <div class="col-4">
@@ -34,7 +34,7 @@
           </div>
         </li>
         <% end %>
-        <li class="list-group-item list-group-item-secondary">
+        <li class="list-group-item list-group-item-secondary" id="add-shortcut-li">
           <%= form_with url: add_shortcut_path do %>
           <div class='row'>
             <div class="col-4">
@@ -66,7 +66,6 @@
 <script>
 
   var custom_submit = function(){
-    $("#add-shortcut-button").prop('disabled', true);
     shortcut_name = $("#shortcut_name").val();
     shortcut_number = $("#shortcut_number").val();
     $.post(
@@ -76,18 +75,43 @@
           number: shortcut_number }
       }
     ).done(function(data){
-      console.log(data);
-      console.log("printed data");
       // add new row with shortcut
+      if (data == "error") {
+        $("#shortcut-save-status").append("<div class='alert alert-warning' role='alert'>  Shortcut was not added </div>").delay(5000).fadeOut("slow", function(){
+          $("#shortcut-save-status").empty();
+          $("#shortcut-save-status").fadeIn();
+        });
+      } else {
 
+        // add new shortcut to list
+      $("#add-shortcut-li").before("<li class='list-group-item list-group-item-secondary'> \
+        <div class='row'> \
+          <div class='col-4'> \
+            <input class='form-control bg-dark text-white' type='text' disabled value='" + data.name + "'> \
+          </div> \
+          <div class='col-4'> \
+            <input class='form-control bg-dark text-white' type='text' disabled value='" + data.number + "'> \
+          </div> \
+          <div class='col-4'> \
+            <button type='button' class='btn btn-secondary delete-shortcut' id='delete-shortcut-" + data.id + "' data-shortcut='" + data.id + "'>Delete</button> \
+            <button style='display: none' type='button' class='btn btn-secondary cancel-delete-shortcut' id='cancel-delete-shortcut-" + data.id + "' data-shortcut='" + data.id + "'>Cancel</button> \
+            <button style='display: none' type='button' class='btn btn-danger confirm-delete-shortcut' id='confirm-delete-shortcut-" + data.id + "' data-shortcut='" + data.id + "'>Confirm</button> \
+          </div> \
+        </div> \
+      </li>");
+
+      // reset add shortcut form
+      $("#toggle-shortcut-form").show();
+      $(".shortcut-form").hide();
+      $("#shortcut_name").val("");
+      $("#shortcut_number").val("");
+
+      // update add status
       $("#shortcut-save-status").append("<div class='alert alert-success' role='alert'>  Shortcut successfully added </div>").delay(5000).fadeOut("slow", function(){
         $("#shortcut-save-status").empty();
         $("#shortcut-save-status").fadeIn();
       });
-
-      setTimeout(function(){$(
-        "#user-preferences-update").prop('disabled', false)
-      }, 500);
+      }
     })
   }
 

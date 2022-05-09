@@ -30,7 +30,12 @@ class ApplicationController < ActionController::Base
     print "controller"
     @shortcut = User.first.shortcuts.new(name: params[:shortcut][:name], number: params[:shortcut][:number].to_i)
     @shortcut.save
-    render json: @shortcut
+    if @shortcut.errors.empty?
+      render json: @shortcut
+    else
+      render json: :error
+      print @shortcut.errors.messages
+    end
   end
 
   def delete_shortcut

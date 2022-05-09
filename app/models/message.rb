@@ -84,6 +84,17 @@ class Message < ApplicationRecord
           User.first.update(preferences: updated_user_prefs)
           Message.send_quick_twilio_sms("iMessage forwarding stopped.")
 
+        # add shortcut command
+      elsif command_match = message_body.match(/^(new shortcut) ([a-zA-z]+) (\d{10})/i)
+          command, name, number = command_match.captures
+          shortcut = User.first.shortcuts.new(name: name, number: number)
+          shortcut.save
+          if shortcut.errors.empty?
+            Message.send_quick_twilio_sms("Shortcut created for #{name} (#{number}).")
+          else
+            Message.send_quick_twilio_sms("Shorcut could not be created because of the following errors: #{shortcut.errors.full_messages}")
+          end
+
         # match user-defined shortcuts
         elsif shortcut_regex.any? { |pattern| pattern.match?(message_body) }
           shortcut_regex.each do |p|
