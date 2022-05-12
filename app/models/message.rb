@@ -12,6 +12,15 @@ class Message < ApplicationRecord
     Contact.find(self.contact_messages.where(is_sender: false).pluck(:contact_id))
   end
 
+  def is_group_chat?
+    Contact.find(self.contact_messages.where(is_sender: false).pluck(:contact_id)).count > 1
+  end
+
+  def self.check_incoming_queues
+    # Message.check_imessage_queue # <-- Don't need, handled by after_save callback on individual ToRecipientQueue record
+    Message.check_twilio_sqs_queue
+  end
+
   # function to check the SQS queue for new commands received by twilio
   def self.check_twilio_sqs_queue
 
@@ -35,9 +44,6 @@ class Message < ApplicationRecord
       })
 
     response.messages.each do |m|
-
-      # use to deduplicate
-      outgoing_messages = []
 
       m_hash = JSON.parse(m.body)
       receipt_handle = m.receipt_handle
@@ -65,81 +71,115 @@ class Message < ApplicationRecord
 
       # only forwarded number can access api
       if from_num == user_prefs[:phone_number]
-
-        # supported commands are "forward" and "unforward" (for now)
-        # beta support for replying with syntax "r {phone_number} {message}"
-
-        # map user shortcuts to regex for use below
-        shortcut_regex = User.first.shortcuts.map { |s| /(^[rm]) (#{s.name}) (.+)/i }
-
-        # forward command -- start forwarding imessages
-        if message_body.downcase == "forward"
-          updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "true"} )
-          User.first.update(preferences: updated_user_prefs)
-          Message.send_quick_twilio_sms("iMessage forwarding started.")
-
-        # unforward command -- stop forwarding imessages
-        elsif message_body.downcase == "unforward"
-          updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "false"} )
-          User.first.update(preferences: updated_user_prefs)
-          Message.send_quick_twilio_sms("iMessage forwarding stopped.")
-
-        # add shortcut command
-      elsif command_match = message_body.match(/^(new shortcut) ([a-zA-z]+) (\d{10})/i)
-          command, name, number = command_match.captures
-          shortcut = User.first.shortcuts.new(name: name, number: number)
-          shortcut.save
-          if shortcut.errors.empty?
-            Message.send_quick_twilio_sms("Shortcut created for #{name} (#{number}).")
-          else
-            Message.send_quick_twilio_sms("Shorcut could not be created because of the following errors: #{shortcut.errors.full_messages}")
-          end
-
-        # match user-defined shortcuts
-        elsif shortcut_regex.any? { |pattern| pattern.match?(message_body) }
-          shortcut_regex.each do |p|
-            if shortcut_match = message_body.match(p)
-              command, shortcut_name, body = shortcut_match.captures
-              phone_number = User.first.shortcuts.find_by('lower(name) = ?', shortcut_name.downcase()).number
-              Message.send_reply(phone_number, body) unless outgoing_messages.include?([phone_number, body])
-              Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") unless outgoing_messages.include?([phone_number, body])
-              outgoing_messages.append([phone_number, body])
-              break
-            end
-          end
-
-        # match standard 9 and 10 digit phone numbers
-        elsif message_body[0..13].downcase.match(/^[rm] \+\d{11}/)
-          phone_number = message_body[2..13]
-          body = message_body[15..]
-          Message.send_reply(phone_number, body) unless outgoing_messages.include?([phone_number, body])
-          Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") unless outgoing_messages.include?([phone_number, body])
-          outgoing_messages.append([phone_number, body])
-        elsif message_body[0..12].downcase.match(/^[rm] \d{11}/)
-          phone_number = "+" + message_body[2..12]
-          body = message_body[14..]
-          Message.send_reply(phone_number, body) unless outgoing_messages.include?([phone_number, body])
-          Message.send_quick_twilio_sms("Message deliverd to #{phone_number}.") unless outgoing_messages.include?([phone_number, body])
-        elsif message_body[0..12].downcase.match(/^[rm] \d{10}/)
-          phone_number = "+1" + message_body[2..11]
-          body = message_body[13..]
-          Message.send_reply(phone_number, body) unless outgoing_messages.include?([phone_number, body])
-          Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") unless outgoing_messages.include?([phone_number, body])
-
-        # else, return an error message via text
-        else
-          Message.send_quick_twilio_sms("Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.")
-        end
+        # refactor logic for message processing into separate method
+        process_message(message_body, "twilio")
       end
 
-      # delete message when done
+      # delete sqs message when done
       resp = sqs.delete_message({
         queue_url: user_prefs[:sqs_url], #
         receipt_handle: receipt_handle,
       })
-
     end
+  end
 
+  # function to check the iMessage Queue for commands
+  def self.check_imessage_queue
+
+    user_prefs = User.first.preferences
+
+    # get messages containing commands
+    to_recipient_queues = ToRecipientQueue.where(sent: false).reverse
+
+    to_recipient_queues.each do |queue_item|
+      message = queue_item.message
+      message_body = message.message_text
+      process_message(message_body, "imessage")
+      queue_item.update(sent: true, sent_time: DateTime.now())
+    end
+  end
+
+  def self.process_message(message_body, respond_via="imessage")
+    # supported commands are "forward" and "unforward" (for now)
+    # beta support for replying with syntax "r {phone_number} {message}"
+    user_prefs = User.first.preferences
+
+    # map user shortcuts to regex for use below
+    shortcut_regex = User.first.shortcuts.map { |s| /(^[rm]) (#{s.name}) (.+)/i }
+
+    # forward command -- start forwarding imessages
+    if message_body.downcase == "forward"
+      updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "true"} )
+      User.first.update(preferences: updated_user_prefs)
+      Message.send_quick_twilio_sms("iMessage forwarding started.") if respond_via == "twilio"
+      Message.send_reply(user_prefs[:phone_number], "iMessage forwarding started.", false) if respond_via == "imessage"
+
+    # unforward command -- stop forwarding imessages
+    elsif message_body.downcase == "unforward"
+      updated_user_prefs = user_prefs.merge( {sms_forwarding_enabled: "false"} )
+      User.first.update(preferences: updated_user_prefs)
+      Message.send_quick_twilio_sms("iMessage forwarding stopped.") if respond_via == "twilio"
+      Message.send_reply(user_prefs[:phone_number], "iMessage forwarding stopped.", false) if respond_via == "imessage"
+
+    # add shortcut command
+    elsif command_match = message_body.match(/^(new shortcut) ([a-zA-z]+) (\d{10})/i)
+      command, name, number = command_match.captures
+      shortcut = User.first.shortcuts.new(name: name, number: number)
+      shortcut.save
+      if shortcut.errors.empty?
+        Message.send_quick_twilio_sms("Shortcut created for #{name} (#{number}).") if respond_via == "twilio"
+        Message.send_reply(user_prefs[:phone_number], "Shortcut created for #{name} (#{number}).", false) if respond_via == "imessage"
+      else
+        Message.send_quick_twilio_sms("Shorcut could not be created because of the following errors: #{shortcut.errors.full_messages}") if respond_via == "twilio"
+        Message.send_reply(user_prefs[:phone_number], "Shorcut could not be created because of the following errors: #{shortcut.errors.full_messages}", false) if respond_via == "imessage"
+      end
+
+    # match user-defined shortcuts
+    elsif shortcut_regex.any? { |pattern| pattern.match?(message_body) }
+      shortcut_regex.each do |p|
+        if shortcut_match = message_body.match(p)
+          command, shortcut_name, body = shortcut_match.captures
+          phone_number = User.first.shortcuts.find_by('lower(name) = ?', shortcut_name.downcase()).number
+          unless Message.check_if_already_sent?(phone_number, body)
+            Message.send_reply(phone_number, body)
+            Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") if respond_via == "twilio"
+            Message.send_reply(User.first.preferences[:phone_number], "Message delivered to #{phone_number}.", false) if respond_via == "imessage"
+          end
+          break
+        end
+      end
+
+    # match standard 9 and 10 digit phone numbers
+    elsif message_body[0..13].downcase.match(/^[rm] \+\d{11}/)
+      phone_number = message_body[2..13]
+      body = message_body[15..]
+      unless Message.check_if_already_sent?(phone_number, body)
+        Message.send_reply(phone_number, body)
+        Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") if respond_via == "twilio"
+        Message.send_reply(user_prefs[:phone_number], "Message delivered to #{phone_number}.", false) if respond_via == "imessage"
+      end
+    elsif message_body[0..12].downcase.match(/^[rm] \d{11}/)
+      phone_number = "+" + message_body[2..12]
+      body = message_body[14..]
+      unless Message.check_if_already_sent?(phone_number, body)
+        Message.send_reply(phone_number, body)
+        Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") if respond_via == "twilio"
+        Message.send_reply(user_prefs[:phone_number], "Message delivered to #{phone_number}.", false) if respond_via == "imessage"
+      end
+    elsif message_body[0..12].downcase.match(/^[rm] \d{10}/)
+      phone_number = "+1" + message_body[2..11]
+      body = message_body[13..]
+      unless Message.check_if_already_sent?(phone_number, body)
+        Message.send_reply(phone_number, body)
+        Message.send_quick_twilio_sms("Message delivered to #{phone_number}.") if respond_via == "twilio"
+        Message.send_reply(user_prefs[:phone_number], "Message delivered to #{phone_number}.", false) if respond_via == "imessage"
+      end
+
+    # else, return an error message via text
+    else
+      Message.send_quick_twilio_sms("Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.") if respond_via == "twilio"
+      Message.send_reply(user_prefs[:phone_number], "Command '#{message_body}' not recognized. Current commands supported are 'forward' and 'unforward' (no quotes) for starting and stopping iMessage forwarding.", false) if respond_via == "imessage"
+    end
   end
 
   # function to import imessages from iMessage chat database
@@ -158,15 +198,11 @@ class Message < ApplicationRecord
 
       # only forward new messages
       # only forward messages if user wants to get them
-      if message.new_record?
-        needs_sms_forwarding = User.first.preferences[:sms_forwarding_enabled].to_s.downcase == "true"
-      else
-        needs_sms_forwarding = false
-      end
+      new_record = message.new_record?
+      sms_forwarding_enabled = ( User.first.preferences[:sms_forwarding_enabled].to_s.downcase == "true" )
 
       chat = Chat.where(guid: m["chat_guid"]).first_or_create
       message.chat_id = chat.id
-
       message.save
 
       # update sender
@@ -175,13 +211,6 @@ class Message < ApplicationRecord
       sender = Contact.where(contact_number: sender_contact).first_or_create
       sender.update(contact_name: sender_name)
       ContactMessage.where(contact_id: sender.id, message_id: message.id, is_sender: true).first_or_create
-
-      # do not forward iMessages where user responds from own iphone or OSX account
-      if sender_contact == User.first.preferences[:iphone_number]
-        needs_sms_forwarding = false
-      elsif sender_name == `id -un`.gsub("\n","") # this gets the OSX username
-        needs_sms_forwarding = false
-      end
 
       # update other_recipients
       m["other_recipients"].each do |r|
@@ -196,9 +225,24 @@ class Message < ApplicationRecord
         message_text: m["text"],
         has_attachment: m["has_attachment"],
         attachment_filetype: m["attachment_filetype"],
-        needs_sms_forwarding: needs_sms_forwarding,
-        twilio_message_id: nil,
+        twilio_message_id: nil
       )
+
+      # create to_user_queue record for new incoming messages
+      # 1. Don't forward the user's own messages (check each of iphone number, other phone number, OSX username)
+      # 2. Only send messages if forwarding is enabled
+      # 3. Only send new records
+      if ( new_record && sms_forwarding_enabled && (sender_contact != User.first.preferences[:iphone_number]) && (sender_contact != User.first.preferences[:phone_number] ) && (sender_contact != User.first.preferences[:iphone_number] ) && (sender_name != `id -un`.gsub("\n","")))
+        queue_item = ToUserQueue.where(message_id: message.id, sent: false).first_or_create
+      end
+
+      # create to_recipient_queue for new outgoing messages (user sends text to own iMessage account for forwarding to recipient)
+      # 1. Must be from sender's other phone number
+      # 2. Must be a new record (don't send multiple texts)
+      # 3. Note, SMS forwarding enabled should not be required, otherwise SMS commands to forward/unforward cannot be made
+      if ( new_record && ( sender_contact == User.first.preferences[:phone_number] ) )
+        queue_item = ToRecipientQueue.where(message_id: message.id, sent: false).first_or_create
+      end
 
     end
   end
@@ -216,59 +260,110 @@ class Message < ApplicationRecord
     message = @client.messages.create( body: message_body, from: User.first.preferences[:twilio_number], to: User.first.preferences[:phone_number] )
   end
 
-  # function to forward iMessages via twilio
-  def self.send_twilio_sms
+  # function to forward iMessages via twilio or SMS
+  def self.forward_incoming_messages_to_user
 
     unless User.is_enabled?
       return false
     end
 
-    #initialize twilio client
-    account_sid = User.first.preferences[:twilio_account_id]
-    auth_token = User.first.preferences[:twilio_auth_token]
-    @client = Twilio::REST::Client.new(account_sid, auth_token)
+    # get message queues
+    to_user_queues = ToUserQueue.where(sent: false).reverse
+
+    # get user prefs
+    user_prefs = User.first.preferences
 
     #iterate over messages (ordered by time received)
-    twilio_messages = Message.where(needs_sms_forwarding: true).order(rowid: :asc)
-    twilio_messages.each do |m|
+    to_user_queues.each do |queue_item|
+      message = queue_item.message
 
       # compose message body
-      message_body =  "From: #{m.sender.contact_name} (#{m.sender.contact_number}) \n"
-      if m.other_recipients.length > 0
+      message_body =  "From: #{message.sender.contact_name} (#{message.sender.contact_number}) \n"
+      if message.other_recipients.length > 0
         message_body += "CC: "
-        message_body += m.other_recipients.map { |r| "#{r.contact_name} (#{r.contact_number})" }.join(", ")
+        message_body += message.other_recipients.map { |r| "#{r.contact_name} (#{r.contact_number})" }.join(", ")
         message_body += "\n***\n"
       end
-      message_body += m.message_text
+      message_body += message.message_text
 
-      # send message
-      message = @client.messages.create( body: message_body, from: User.first.preferences[:twilio_number], to: User.first.preferences[:phone_number] )
-      m.update(needs_sms_forwarding: false, twilio_message_id: message.sid)
+      if user_prefs[:twilio_enabled].to_s.downcase == "true"
+
+        #initialize twilio client
+        account_sid = User.first.preferences[:twilio_account_id]
+        auth_token = User.first.preferences[:twilio_auth_token]
+        @client = Twilio::REST::Client.new(account_sid, auth_token)
+
+        # send message
+        twilio_message = @client.messages.create( body: message_body, from: User.first.preferences[:twilio_number], to: User.first.preferences[:phone_number] )
+        message.update(twilio_mesage_id: twilio_message.sid)
+
+      elsif user_prefs[:imessage_enabled].to_s.downcase == "true"
+
+        # send iMessage message
+        Message.send_reply(User.first.preferences[:phone_number], message_body, false)
+
+      else
+
+        print("Neither Twilio nor iMessage forwarding enabled")
+
+      end
+
+      # update records
+      queue_item.update(sent: true, sent_time: DateTime.now())
     end
   end
 
-  def self.send_reply(phone_number, message_body)
+  # function to return true if message already has been sent
+  def self.check_if_already_sent?(phone_number, message_body)
 
-    # try sending iMessage
-    OsxTools.send_imessage(phone_number, message_body)
+    phone_number = phone_number.to_s[-10..]
+
+    tools = MessageTools.new
+    messages = tools.get_messages(10)
+
+    messages.each do |m|
+      recipients = m["other_recipients"]
+      if (m["text"] == message_body)
+        recipients.each do |r|
+          if (r[:contact][-10..] == phone_number)
+            return true
+          end
+        end
+      end
+    end
+
+    return false
+  end
+
+  def self.send_reply(phone_number, message_body, send_as_imessage=true)
+
+    phone_number = phone_number.to_s[-10..]
 
     # check recent messages to see if iMessage sent
     # if not, then send SMS
     tools = MessageTools.new
     messages = tools.get_messages(10)
 
-    messages.each do |m|
-      if (m["text"] == message_body)
-        m["other_recipients"].each do |r|
-          if r[:contact] == phone_number
-            error_code = m["error"]
-            if error_code != 0
-              OsxTools.send_sms_message(phone_number, message_body)
-              break
-            end
+    if send_as_imessage
+      # try sending iMessage
+      OsxTools.send_imessage(phone_number, message_body)
+
+      # check recent messages to see if iMessage sent
+      # if not, then send SMS
+      tools = MessageTools.new
+      messages = tools.get_messages(10)
+
+      messages.each do |m|
+        if (m["text"] == message_body)
+          sleep 5
+          if m["error"] != 0
+            OsxTools.send_sms_message(phone_number, message_body)
+            break
           end
         end
       end
+    else
+      OsxTools.send_sms_message(phone_number, message_body)
     end
 
     return

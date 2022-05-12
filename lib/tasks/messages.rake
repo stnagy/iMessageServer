@@ -8,12 +8,12 @@ namespace :messages do
 
   desc "send SMS messages via Twilio"
   task :send_sms => [:environment] do
-    Message.send_twilio_sms
+    Message.forward_incoming_messages_to_user
   end
 
-  desc "check AWS SQS for start/stop messages"
-  task :check_sqs => [:environment] do
-    Message.check_twilio_sqs_queue
+  desc "check AWS SQS and iMessage for incoming commands"
+  task :check_commands => [:environment] do
+    Message.check_incoming_queues
   end
 
 end

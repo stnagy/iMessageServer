@@ -66,8 +66,8 @@ class OsxTools
           end if
 
           -- send the message
-          set targetService to id of service "SMS"
-          set targetBuddy to buddy "#{phone_number}" of service id targetService
+          set targetService to 1st service whose service type = SMS
+          set targetBuddy to buddy "#{phone_number}" of targetService
           send "#{body}" to targetBuddy
 
           -- if the app was not running, close the window

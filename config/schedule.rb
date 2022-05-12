@@ -28,5 +28,5 @@ every 1.minutes do
 end
 
 every 1.minutes do
-  rake "messages:check_sqs"
+  rake "messages:check_commands"
 end

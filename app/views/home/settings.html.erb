@@ -9,12 +9,32 @@
           <div class="row">
             <div class="col">
               <div class="custom-control custom-switch">
-                <% if @user.preferences[:sms_forwarding_enabled].downcase == "true" %>
+                <% if @user.preferences[:sms_forwarding_enabled].to_s.downcase == "true" %>
                   <input type="checkbox" class="custom-control-input" id="sms_forwarding_enabled" checked="checked">
                 <% else %>
                   <input type="checkbox" class="custom-control-input" id="sms_forwarding_enabled">
                 <% end %>
                 <label class="custom-control-label" for="sms_forwarding_enabled">Enable SMS Forwarding</label>
+              </div>
+            </div>
+            <div class="col">
+              <div class="custom-control custom-switch">
+                <% if @user.preferences[:twilio_enabled].to_s.downcase == "true" %>
+                  <input type="checkbox" class="custom-control-input" id="twilio_enabled" checked="checked">
+                <% else %>
+                  <input type="checkbox" class="custom-control-input" id="twilio_enabled">
+                <% end %>
+                <label class="custom-control-label" for="twilio_enabled">Enable Twilio Forwarding</label>
+              </div>
+            </div>
+            <div class="col">
+              <div class="custom-control custom-switch">
+                <% if @user.preferences[:imessage_enabled].to_s.downcase == "true" %>
+                  <input type="checkbox" class="custom-control-input" id="imessage_enabled" checked="checked">
+                <% else %>
+                  <input type="checkbox" class="custom-control-input" id="imessage_enabled">
+                <% end %>
+                <label class="custom-control-label" for="imessage_enabled">Enable iMessage Forwarding</label>
               </div>
             </div>
           </div>
@@ -113,6 +133,8 @@
   var custom_submit = function(){
     $("#user-preferences-update").prop('disabled', true);
     sms_forwarding_enabled = $("#sms_forwarding_enabled").is(':checked');
+    twilio_enabled = $("#twilio_enabled").is(':checked');
+    imessage_enabled = $("#imessage_enabled").is(':checked');
     iphone_number = $("#iphone_number").val();
     phone_number = $("#phone_number").val();
     twilio_number = $("#twilio_number").val();
@@ -127,6 +149,8 @@
       { user: {
         preferences:
           { sms_forwarding_enabled: sms_forwarding_enabled,
+            twilio_enabled: twilio_enabled,
+            imessage_enabled: imessage_enabled,
             iphone_number: iphone_number,
             phone_number: phone_number,
             twilio_number: twilio_number,
@@ -139,8 +163,10 @@
           }
       }
     ).done(function(data){
-
-      $("#sms_forwarding_enabled").prop('checked', data["ms_forwarding_enabled"]);
+      console.log(data);
+      $("#sms_forwarding_enabled").prop('checked', data["sms_forwarding_enabled"] == "true");
+      $("#twilio_enabled").prop('checked', data["twilio_enabled"] == "true");
+      $("#imessage_enabled").prop('checked', data["imessage_enabled"] == "true");
       $("#iphone_number").val(data["iphone_number"]);
       $("#phone_number").val(data["phone_number"]);
       $("#twilio_number").val(data["twilio_number"]);
@@ -168,6 +194,18 @@
   });
 
   $("#sms_forwarding_enabled").click(function(e){
+    custom_submit();
+  })
+
+  $("#twilio_enabled").click(function(e){
+    is_checked = $("#imessage_enabled").prop( "checked");
+    $("#imessage_enabled").prop( "checked", !is_checked);
+    custom_submit();
+  });
+
+  $("#imessage_enabled").click(function(e){
+    is_checked = $("#twilio_enabled").prop( "checked");
+    $("#twilio_enabled").prop( "checked", !is_checked);
     custom_submit();
   })
 

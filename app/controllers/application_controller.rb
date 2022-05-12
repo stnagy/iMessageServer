@@ -47,7 +47,7 @@ class ApplicationController < ActionController::Base
   private
 
   def user_params
-    params.require(:user).permit(:preferences => [:sms_forwarding_enabled, :phone_number, :iphone_number, :twilio_number, :twilio_account_id, :twilio_auth_token, :aws_id, :aws_secret, :aws_region, :sqs_url] )
+    params.require(:user).permit(:preferences => [:sms_forwarding_enabled, :twilio_enabled, :imessage_enabled, :phone_number, :iphone_number, :twilio_number, :twilio_account_id, :twilio_auth_token, :aws_id, :aws_secret, :aws_region, :sqs_url] )
   end
 
 end
